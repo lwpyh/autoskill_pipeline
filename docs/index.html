@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="AutoSkill - Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video QA">
+  <meta name="description" content="AutoSkill discovers training-free frame-selection skills with LLM agents and routes among them via a taxonomy-guided router, improving long-video QA accuracy with a frozen MLLM.">
+  <meta name="keywords" content="long video question answering, frame selection, training-free, skill discovery, LLM agents, video MLLM, routing, AutoSkill">
+  <meta name="author" content="AutoSkill Authors">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="AutoSkill">
+  <meta property="og:title" content="One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering">
+  <meta property="og:description" content="AutoSkill discovers training-free frame-selection skills with LLM agents and routes among them via a taxonomy-guided router, improving long-video QA accuracy with a frozen MLLM.">
+  <meta property="og:image" content="static/images/teaser.png">
+  <meta property="og:image:alt" content="AutoSkill pipeline overview">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AutoSkill: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills">
+  <meta name="twitter:description" content="AutoSkill discovers training-free frame-selection skills with LLM agents and routes among them via a taxonomy-guided router.">
+  <meta name="twitter:image" content="static/images/teaser.png">
+
+  <!-- Academic/Research Specific -->
+  <meta name="citation_title" content="One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering">
+  <meta name="citation_publication_date" content="2026">
+
+  <title>AutoSkill: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills</title>
+
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="static/images/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="static/images/favicon-180.png">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+</head>
+<body>
+
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <main id="main-content">
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">One Skill Does Not Fit All: Automatic Discovery and
+              Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- AUTHOR NAMES NOT YET FILLED IN — the source .tex still has the AAAI template's
+                   placeholder author block. Replace this line with the real, ordered author list
+                   (with links) before publishing. -->
+              <span class="author-block">Author names TBD</span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">ArXiv · 2026</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <!-- TODO: replace with the real arXiv abstract URL once posted -->
+                  <a href="https://arxiv.org/abs/XXXX.XXXXX" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+
+              <span class="link-block">
+                <a href="https://github.com/lwpyh/autoskill_pipeline" target="_blank"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fab fa-github"></i></span>
+                <span>Code</span>
+              </a>
+            </span>
+
+            <span class="link-block">
+              <a href="https://huggingface.co/datasets/Cade921/AutoSkill_dev" target="_blank"
+              class="external-link button is-normal is-rounded is-dark">
+              <span class="icon"><i class="fas fa-database"></i></span>
+              <span>Data</span>
+            </a>
+          </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teaser image -->
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <img src="static/images/teaser.png" alt="AutoSkill method overview, three stages: (1) Execution-Guided
+             Skill Discovery — an agent proposes, implements, evaluates, and refines skills against a 300-sample
+             development set to build a Top-K skill toolbox; (2) Target-Adaptive Skill Routing — target-style
+             domain adaptation and a question taxonomy are used to build an accuracy matrix and a
+             category-to-skill routing table; (3) Category-to-Skill Inference — a test question is assigned a
+             category, its routed skill selects frames, and the frozen backbone answers."
+             style="width:100%;height:auto;">
+        <h2 class="subtitle has-text-centered">
+          AutoSkill discovers a toolbox of training-free frame-selection skills with LLM agents, then routes
+          each question to the skill best suited to its semantic category — using only unlabelled target-side
+          question/option text, never target videos or answers.
+        </h2>
+      </div>
+    </div>
+  </section>
+  <!-- End teaser image -->
+
+  <!-- Paper abstract -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Long-Video Question Answering (LVQA) requires locating decisive evidence
+              in hour-scale videos under a limited frame budget.
+              Most training-free methods apply the same frame-selection strategy to all
+              questions, despite substantial variation in the evidence required by
+              different question types.
+              Our analysis shows that the relative effectiveness of frame-selection
+              strategies varies across semantic categories and benchmarks, motivating
+              adaptive evidence acquisition.
+              In this paper, we introduce <strong>AutoSkill</strong>, a source-supervised framework for
+              automatically discovering and routing executable frame-selection skills.
+              Starting from a small labelled source pool, LLM agents iteratively propose,
+              implement, evaluate, and refine candidate skills.
+              For a target benchmark, AutoSkill uses only unlabelled question and option
+              text to induce a shared semantic taxonomy, rewrite labelled source examples
+              into the target style, and estimate a category-to-skill mapping.
+              Neither target videos nor target answers are used in this process.
+              At inference time, each question is assigned one skill, which selects the
+              frames used in a single inference of the frozen video MLLM.
+              Across five long-video benchmark splits, AutoSkill improves
+              Qwen2.5-VL-7B and Qwen3.5-4B by 2.4% and 1.2%,
+              respectively, demonstrating the effectiveness of our AutoSkill.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End paper abstract -->
+
+  <!-- Results -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Results</h2>
+
+      <h3 class="title is-4">Qwen2.5-VL-7B</h3>
+      <div class="table-container">
+        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+          <thead>
+            <tr>
+              <th>Method</th><th>MLVU-dev</th><th>MLVU-test</th><th>LongVideoBench</th>
+              <th>VideoMME</th><th>LVBench</th><th>Avg / &Delta;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Qwen2.5-VL (uniform baseline)</td><td>66.0</td><td>47.7</td><td>61.2</td><td>64.6</td><td>42.5</td><td>56.4 / --</td></tr>
+            <tr><td>SigLIP-MMR</td><td>68.3</td><td>51.5</td><td>61.6</td><td><strong>65.3</strong></td><td>46.2</td><td>58.6 / +2.2</td></tr>
+            <tr><td>CLIP-Spatial</td><td>68.8</td><td><strong>52.1</strong></td><td><strong>62.0</strong></td><td>64.0</td><td>45.6</td><td>58.5 / +2.1</td></tr>
+            <tr><td>CLIP-Count</td><td>67.7</td><td>50.6</td><td><strong>62.0</strong></td><td>64.1</td><td>45.2</td><td>57.9 / +1.5</td></tr>
+            <tr><td>CLIP-MMR</td><td>67.6</td><td>51.2</td><td>61.1</td><td>64.5</td><td>44.9</td><td>57.9 / +1.5</td></tr>
+            <tr><td>SigLIP-OCR</td><td>67.4</td><td>50.1</td><td>61.5</td><td><strong>65.3</strong></td><td>44.9</td><td>57.8 / +1.4</td></tr>
+            <tr class="has-background-light"><td><strong>AutoSkill (ours)</strong></td><td><strong>69.0</strong></td><td>51.1</td><td>61.9</td><td>65.2</td><td><strong>46.8</strong></td><td><strong>58.8 / +2.4</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="title is-4">Qwen3.5-4B</h3>
+      <div class="table-container">
+        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+          <thead>
+            <tr>
+              <th>Method / Skill</th><th>MLVU-dev</th><th>MLVU-test</th><th>LongVideoBench</th>
+              <th>VideoMME</th><th>LVBench</th><th>Avg / &Delta;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Qwen3.5 (uniform baseline)</td><td>69.9</td><td>55.1</td><td>61.3</td><td>67.3</td><td>42.3</td><td>59.2 / --</td></tr>
+            <tr><td>QMSD-Zoom</td><td>69.5</td><td>55.8</td><td>62.2</td><td>65.8</td><td>44.6</td><td>59.6 / +0.4</td></tr>
+            <tr><td>Boundary-Evidence</td><td>69.2</td><td>55.4</td><td>62.1</td><td>64.9</td><td>45.1</td><td>59.3 / +0.1</td></tr>
+            <tr><td>Indexed-Evidence</td><td>68.9</td><td>55.5</td><td>62.3</td><td>66.1</td><td>46.3</td><td>59.8 / +0.6</td></tr>
+            <tr><td>Clip-Face-Expression</td><td>69.9</td><td>55.5</td><td>62.3</td><td>66.0</td><td>46.1</td><td>60.0 / +0.8</td></tr>
+            <tr><td>Count-Diversity-Nudge</td><td>69.9</td><td>55.4</td><td>62.4</td><td>67.0</td><td>42.3</td><td>59.4 / +0.2</td></tr>
+            <tr class="has-background-light"><td><strong>AutoSkill (ours)</strong></td><td>69.4</td><td><strong>57.5</strong></td><td><strong>62.4</strong></td><td><strong>67.1</strong></td><td>45.4</td><td><strong>60.4 / +1.2</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="has-text-grey is-size-7">LongVB = LongVideoBench. Bold marks the best value per column
+        within each table. Numbers taken directly from the paper's results tables.</p>
+    </div>
+  </section>
+  <!-- End results -->
+
+  <!-- Data -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3">Data</h2>
+      <div class="content">
+        <p>
+          The skill-discovery loop's development data is released on the Hugging Face Hub:
+          <a href="https://huggingface.co/datasets/Cade921/AutoSkill_dev" target="_blank">Cade921/AutoSkill_dev</a>.
+          It contains <code>dev300.json</code> (the 300-sample development set that drives every
+          discovery-loop cycle) and <code>pool3000.json</code> (the larger labelled source pool
+          <code>dev300.json</code> was sampled from). The set is compiled from five public video-QA
+          sources (VideoVista, ALLVB, LLaVA-Video-178K, SpaceR-151k, longvideo-reason); no video files
+          are redistributed, and the dataset card lists per-source licenses and attribution.
+        </p>
+      </div>
+    </div>
+  </section>
+  <!-- End data -->
+
+  <!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <div class="bibtex-header">
+        <h2 class="title">BibTeX</h2>
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
+          <i class="fas fa-copy"></i>
+          <span class="copy-text">Copy</span>
+        </button>
+      </div>
+      <!-- Placeholder key/venue — authors and venue not finalized in the source .tex yet. -->
+      <pre id="bibtex-code"><code>@article{autoskill2026,
+  title={One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering},
+  author={AutoSkill Authors},
+  journal={arXiv preprint},
+  year={2026}
+}</code></pre>
+    </div>
+  </section>
+  <!--End BibTex citation -->
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+              You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+              Commons Attribution-ShareAlike 4.0 International License</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  </main>
+</body>
+</html>

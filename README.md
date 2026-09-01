@@ -12,6 +12,11 @@ Stage 4: Classify Benchmark  — Qwen2.5-VL classify valuable benchmark samples
 Stage 5: Evaluate            — Route + evaluate on 5 benchmarks
 ```
 
+Stage 1's skill-discovery loop follows the process specified in
+[`SKILL.md`](SKILL.md) (failure diagnosis → literature review → reviewer-model
+proposal → implementation → CPU smoke tests → GPU evaluation → analysis,
+repeated per cycle until convergence).
+
 ## Key Concepts
 
 ### 6 Candidate Skills (Top-5 + Baseline)
@@ -39,6 +44,23 @@ Stage 5: Evaluate            — Route + evaluate on 5 benchmarks
 - `mlvu` / `mlvu_test`: task_type macro-average
 - `videomme` / `longvideobench` / `lvbench`: sample-level average
 - Final result = average of 5 benchmarks
+
+## Data
+
+The skill-discovery loop's development data (Stage 1) is published on the
+Hugging Face Hub:
+**[Cade921/AutoSkill_dev](https://huggingface.co/datasets/Cade921/AutoSkill_dev)**
+
+| File | n | Role |
+|---|---|---|
+| `dev300.json` | 300 | Development set (`D_dev`) — drives every discovery-loop cycle. Stratified 100/100/100 across short/medium/long duration. |
+| `pool3000.json` | 3000 | Larger labelled source pool that `dev300.json` was sampled from. |
+
+This is a compiled/derived set (video QA sourced from VideoVista, ALLVB,
+LLaVA-Video-178K, SpaceR-151k, and longvideo-reason) released under
+CC-BY-NC-SA-4.0; see the dataset card for per-source licenses and attribution.
+No video files are redistributed — each sample points to its source video
+via `data_source` + `video_relpath`.
 
 ## Usage
 
@@ -108,6 +130,7 @@ python stage5_evaluate.py \
 ```
 autoskill_pipeline/
 ├── README.md                      # This file
+├── SKILL.md                       # Stage 1 discovery-loop process specification
 ├── run_pipeline.sh                # Full pipeline runner
 ├── stage1_skill_discovery.py      # Rank skills, select Top-5
 ├── stage2_rewrite_trainset.py    # Rewrite training queries (style alignment)
