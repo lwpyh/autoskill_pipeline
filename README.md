@@ -11,7 +11,6 @@ Code release for the paper:
 <p>
 <a href="https://arxiv.org/abs/2609.12517"><img src="https://img.shields.io/badge/arXiv-2609.12517-b31b1b.svg"></a>
 <a href="https://lwpyh.github.io/autoskill_pipeline/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
-<a href="https://huggingface.co/datasets/Cade921/AutoSkill_dev"><img src="https://img.shields.io/badge/🤗%20Dataset-AutoSkill__dev-yellow"></a>
 </p>
 
 ## 🚀 News
