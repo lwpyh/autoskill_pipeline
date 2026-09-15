@@ -1,123 +1,333 @@
-# AutoSkill: Automatic Video Skill Routing for Long-Video Understanding
+# 🔥 AutoSkill: One Skill Does Not Fit All
 
-AutoSkill is a category-based video sampling skill routing method. By classifying input questions into 19 categories, it automatically selects the optimal video sampling strategy (skill) to improve VideoLLM performance on long-video understanding benchmarks.
+Code release for the paper:
 
-## Pipeline Overview
+[**One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering**](https://arxiv.org/abs/2609.12517)
 
+[Jian Hu*](https://lwpyh.github.io/), Zixu Cheng*, Da Li, Wei Li, Ziquan Liu, [Shaogang Gong](http://www.eecs.qmul.ac.uk/~sgg/)
+
+<sup>* Equal contribution.</sup>
+
+<p>
+<a href="https://arxiv.org/abs/2609.12517"><img src="https://img.shields.io/badge/arXiv-2609.12517-b31b1b.svg"></a>
+<a href="https://lwpyh.github.io/autoskill_pipeline/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
+<a href="https://huggingface.co/datasets/Cade921/AutoSkill_dev"><img src="https://img.shields.io/badge/🤗%20Dataset-AutoSkill__dev-yellow"></a>
+</p>
+
+## 🚀 News
+
+- **[2026.09]** AutoSkill code and development data are publicly released.
+- **[2026.09.11]** Our paper is available on [arXiv](https://arxiv.org/abs/2609.12517).
+
+<p align="center">
+  <img src="docs/static/images/teaser.png" width="100%" />
+</p>
+
+## 💡 Highlight
+
+Long-video question answering is **not one homogeneous frame-retrieval problem**.
+
+Different questions require different forms of visual evidence: counting may benefit from broad and diverse coverage, temporal reasoning from localized co-occurring evidence, OCR questions from text-aware sampling, while narrative understanding may require global temporal coverage. Consequently, **no single frame-selection policy is optimal for every question category or benchmark**.
+
+**AutoSkill** treats frame selection as an **evidence-acquisition policy** and replaces the conventional one-selector-for-all paradigm with an automatically discovered and adaptively routed skill toolbox.
+
+The key idea is simple:
+
+> **Discover multiple complementary frame-selection skills, learn when each skill should be used, and execute only one skill for each question.**
+
+AutoSkill has three key properties:
+
+- **Automatic Skill Discovery.**  
+  An LLM agent iteratively diagnoses failures, proposes frame-selection strategies, implements executable skills, evaluates them with a frozen Video-MLLM, and refines the toolbox using execution feedback.
+
+- **Target-Adaptive Taxonomy-Guided Routing.**  
+  AutoSkill uses only **unlabelled target questions and answer options** to induce a shared semantic taxonomy and adapt labelled source examples into the target query style. No target videos or target answers are used to construct the router.
+
+- **One Skill, One Video-MLLM Pass.**  
+  At inference time, each question is assigned to one semantic category and routed to exactly one frame-selection skill. The selected frames are then processed by the frozen Video-MLLM in a single inference pass.
+
+AutoSkill is therefore **source-supervised, training-free, and target-label-free**: it does not update the Video-MLLM or auxiliary models, and target adaptation never accesses paired target videos or answer annotations.
+
+---
+
+## 🧠 How AutoSkill Works
+
+### Stage 1: Execution-Guided Skill Discovery
+
+Starting from a capability-focused development set, an LLM agent repeatedly performs
+
+```text
+Failure Diagnosis
+      ↓
+Skill Proposal
+      ↓
+Implementation
+      ↓
+Reviewer Check
+      ↓
+CPU Smoke Test
+      ↓
+GPU Evaluation
+      ↓
+Performance Analysis
+      └──────────────→ next cycle
 ```
-Stage 1: Skill Discovery     — Rank skills on N1800+supplement, select Top-5
-Stage 2: Rewrite Train Set   — Rewrite training queries to match benchmark style
-Stage 3: Build Router Table  — Learn category→skill mapping from 1500 training samples
-Stage 4: Classify Benchmark  — Qwen2.5-VL classify valuable benchmark samples
-Stage 5: Evaluate            — Route + evaluate on 5 benchmarks
-```
 
-Stage 1's skill-discovery loop follows the process specified in
-[`SKILL.md`](SKILL.md) (failure diagnosis → literature review → reviewer-model
-proposal → implementation → CPU smoke tests → GPU evaluation → analysis,
-repeated per cycle until convergence).
+The complete discovery procedure is specified in [`SKILL.md`](SKILL.md).
 
-## Key Concepts
+After multiple feedback cycles, the best-performing complementary skills form the final **Top-K skill toolbox**.
 
-### 6 Candidate Skills (Top-5 + Baseline)
+For Qwen2.5-VL-7B, the discovered Top-5 toolbox contains:
 
-| Skill | Description |
-|-------|-------------|
-| `siglip_mmr_diverse` | SigLIP + MMR diversity sampling |
-| `clip_spatial_cooccur` | CLIP spatial co-occurrence sampling |
-| `clip_count_topk` | CLIP count top-k sampling |
-| `siglip_ocr_text_aware` | SigLIP OCR text-aware sampling |
-| `clip_mmr_diverse` | CLIP + MMR diversity sampling |
-| `uniform_128_direct` | Uniform 128-frame sampling (baseline) |
-
-### 19 Question Categories
-
-`action_recognition`, `anomaly_detection`, `appearance`, `causal_reasoning`, `counting`, `emotion_state`, `event_identification`, `fact_verification`, `general_qa`, `narrative_plot`, `negative_qa`, `object_identification`, `ocr_text`, `other`, `person_attribute`, `spatial_location`, `temporal_ordering`, `timestamp_specific`, `yes_no`
-
-### Valuable vs Non-valuable Samples
-
-- **Non-valuable** (all skills correct / all wrong): No routing needed — all correct → correct, all wrong → wrong
-- **Valuable** (skills disagree): Route via Qwen2.5-VL classification → router table → skill
-
-### Evaluation
-
-- `mlvu` / `mlvu_test`: task_type macro-average
-- `videomme` / `longvideobench` / `lvbench`: sample-level average
-- Final result = average of 5 benchmarks
-
-## Data
-
-The skill-discovery loop's development data (Stage 1) is published on the
-Hugging Face Hub:
-**[Cade921/AutoSkill_dev](https://huggingface.co/datasets/Cade921/AutoSkill_dev)**
-
-| File | n | Role |
+| Paper Name | Implementation | Main Intuition |
 |---|---|---|
-| `dev300.json` | 300 | Development set (`D_dev`) — drives every discovery-loop cycle. Stratified 100/100/100 across short/medium/long duration. |
-| `pool3000.json` | 3000 | Larger labelled source pool that `dev300.json` was sampled from. |
+| **SigLIP-MMR** | `siglip_mmr_diverse` | Query relevance + diverse visual evidence |
+| **CLIP-Spatial** | `clip_spatial_cooccur` | Spatially co-occurring evidence |
+| **CLIP-Count** | `clip_count_topk` | Count-sensitive frame retrieval |
+| **CLIP-MMR** | `clip_mmr_diverse` | CLIP relevance + diversity |
+| **SigLIP-OCR** | `siglip_ocr_text_aware` | Text-aware visual evidence |
+| Uniform Sampling | `uniform_128_direct` | 128-frame baseline |
 
-This is a compiled/derived set (video QA sourced from VideoVista, ALLVB,
-LLaVA-Video-178K, SpaceR-151k, and longvideo-reason) released under
-CC-BY-NC-SA-4.0; see the dataset card for per-source licenses and attribution.
-No video files are redistributed — each sample points to its source video
-via `data_source` + `video_relpath`.
+---
 
-## Usage
+### Stage 2: Target-Adaptive Skill Routing
 
-### Quick Start
+AutoSkill adapts the discovered toolbox to the target query distribution **without target annotations**.
+
+We collect unlabelled question-option pairs from the target benchmarks and induce a shared taxonomy of **19 semantic question categories**.
+
+For each category, semantically compatible labelled source samples are rewritten into the target query style while preserving the original video grounding and answer labels.
+
+The discovered skills are evaluated on this target-style routing set to estimate a category-specific skill utility matrix:
+
+```text
+                Skill 1   Skill 2   Skill 3   ...   Skill K
+Category 1         ✓         ·         ·              ·
+Category 2         ·         ✓         ·              ·
+Category 3         ·         ·         ✓              ·
+   ...
+```
+
+The best skill for each category forms the final category-to-skill routing table.
+
+<details>
+<summary><b>19 Question Categories</b></summary>
+
+<br>
+
+`action_recognition`, `anomaly_detection`, `appearance`, `causal_reasoning`,
+`counting`, `emotion_state`, `event_identification`, `fact_verification`,
+`general_qa`, `narrative_plot`, `negative_qa`, `object_identification`,
+`ocr_text`, `other`, `person_attribute`, `spatial_location`,
+`temporal_ordering`, `timestamp_specific`, `yes_no`
+
+</details>
+
+---
+
+### Stage 3: Category-to-Skill Inference
+
+For each test question:
+
+```text
+Question
+   ↓
+Semantic Category Prediction
+   ↓
+Category → Skill Lookup
+   ↓
+Execute ONE Frame-Selection Skill
+   ↓
+Selected Frames
+   ↓
+Frozen Video-MLLM
+   ↓
+Answer
+```
+
+Only one routed skill is executed for each sample, preserving approximately the inference cost of a conventional single-skill method.
+
+---
+
+## 📊 Results
+
+We evaluate AutoSkill on five long-video benchmark splits:
+
+- MLVU-dev
+- MLVU-test
+- LongVideoBench
+- VideoMME
+- LVBench
+
+All experiments use a unified **128-frame budget** unless otherwise specified.
+
+### Qwen2.5-VL-7B
+
+| Method | MLVU-dev | MLVU-test | LongVideoBench | VideoMME | LVBench | Average |
+|---|---:|---:|---:|---:|---:|---:|
+| Uniform Sampling | 66.0 | 47.7 | 61.2 | 64.6 | 42.5 | 56.4 |
+| SigLIP-MMR | 68.3 | **51.5** | 61.6 | **65.3** | 46.2 | 58.6 |
+| **AutoSkill** | **69.0** | 51.1 | **61.9** | 65.2 | **46.8** | **58.8** |
+| **Gain over baseline** | **+3.0** | **+3.4** | **+0.7** | **+0.6** | **+4.3** | **+2.4** |
+
+AutoSkill achieves the best overall performance while using only a single routed skill for each question.
+
+### Cross-Backbone Generalization
+
+| Backbone | Uniform Baseline | Best Discovered Fixed Skill | AutoSkill | Gain |
+|---|---:|---:|---:|---:|
+| Qwen2.5-VL-7B | 56.4 | 58.6 | **58.8** | **+2.4** |
+| Qwen3.5-4B | 59.2 | 60.0 | **60.4** | **+1.2** |
+
+The toolbox is rediscovered independently for each backbone, showing that AutoSkill adapts the skill-discovery and routing procedure rather than relying on one manually fixed set of heuristics.
+
+---
+
+## 🔀 Why Routing Instead of One Global Skill?
+
+AutoSkill's improvement does not come only from finding a stronger frame selector.
+
+| Strategy | Target Labels | Avg. Accuracy | Video-MLLM Passes |
+|---|---:|---:|---:|
+| Uniform Sampling | ✗ | 56.4 | 1 |
+| Discovery-Cycle Router | ✗ | 57.4 | 1 |
+| Target-Adapted Global Fixed | ✗ | 57.9 | 1 |
+| Majority Voting | ✗ | 58.6 | 5 |
+| Post-hoc Best Fixed Skill | ✓ | 58.6 | 1 |
+| **AutoSkill** | **✗** | **58.8** | **1** |
+| Optimal Category Mapping | ✓ | 60.4 | 1 |
+
+Compared with the target-adapted global fixed strategy, category-specific routing provides a further **+0.9 point** improvement under the same supervision and inference budget.
+
+Majority voting reaches 58.6 but requires **five Video-MLLM passes** per sample, whereas AutoSkill achieves 58.8 with only **one pass**.
+
+---
+
+## 📦 Data
+
+The development data used for AutoSkill's skill-discovery loop is released on Hugging Face:
+
+🤗 **[Cade921/AutoSkill_dev](https://huggingface.co/datasets/Cade921/AutoSkill_dev)**
+
+| File | # Samples | Description |
+|---|---:|---|
+| `dev300.json` | 300 | Capability-focused development set used throughout skill discovery |
+| `pool3000.json` | 3,000 | Larger labelled source pool |
+
+`dev300.json` is stratified across short-, medium-, and long-duration videos and is designed to provide informative success/failure feedback for skill discovery.
+
+No video files are redistributed. Each example points to its original video through metadata such as `data_source` and `video_relpath`.
+
+Please refer to the Hugging Face dataset card for source-specific licenses and attribution.
+
+---
+
+## ⚙️ Installation
+
+### Requirements
+
+- Python 3.10+
+- PyTorch 2.0+
+- `transformers`
+- `decord`
+- Qwen2.5-VL / Qwen3.5 model weights
+- [`lmms-eval`](https://github.com/EvolvingLMMs-Lab/lmms-eval)
+
+Clone this repository:
 
 ```bash
-# Set paths (modify to your environment)
+git clone https://github.com/lwpyh/autoskill_pipeline.git
+cd autoskill_pipeline
+```
+
+Configure the model and data paths according to your environment.
+
+---
+
+## 🚀 Quick Start
+
+### Run the Full Pipeline
+
+```bash
+# Model
 export MODEL_PATH=/path/to/Qwen2.5-VL-7B-Instruct
+
+# Benchmark outputs
 export BENCH_DIR=/path/to/benchmark_results
+
+# Skill-discovery results
 export N1800_RESULTS=/path/to/N1800_results.json
 export SUPP_RESULTS=/path/to/supplement_results.json
 export N1800_META=/path/to/n1800_metadata.json
 export SUPP_META=/path/to/supp_metadata.json
+
+# Routing data
 export TRAIN_JSON=/path/to/train_samples.json
 export BENCH_QUERIES=/path/to/benchmark_queries.json
-export IDEAL_TABLE=/path/to/ideal_router_table.json
 
-# Run full pipeline
 bash run_pipeline.sh
-
-# Or run specific stages
-bash run_pipeline.sh --stage 3          # Build router table only
-bash run_pipeline.sh --stages 3,4,5     # Build router → classify → evaluate
 ```
 
-### Stage-by-stage
+You can also run only selected stages:
 
 ```bash
-# Stage 1: Skill Discovery
+# Build router only
+bash run_pipeline.sh --stage 3
+
+# Router → benchmark classification → evaluation
+bash run_pipeline.sh --stages 3,4,5
+```
+
+---
+
+<details>
+<summary><b>Run Each Stage Separately</b></summary>
+
+### 1. Select the Top-5 Discovered Skills
+
+```bash
 python stage1_skill_discovery.py \
     --n1800-results $N1800_RESULTS \
     --supp-results $SUPP_RESULTS \
     --n1800-meta $N1800_META \
     --supp-meta $SUPP_META \
     --output outputs/top5_skills.json
+```
 
-# Stage 2: Rewrite Training Set
+The complete iterative discovery process that generates candidate skills is documented in [`SKILL.md`](SKILL.md).
+
+### 2. Construct the Target-Style Routing Set
+
+```bash
 python stage2_rewrite_trainset.py \
     --train-json $TRAIN_JSON \
     --bench-queries $BENCH_QUERIES \
     --model-path $MODEL_PATH \
     --output outputs/train_rewritten.json
+```
 
-# Stage 3: Build Router Table
+### 3. Build the Category-to-Skill Router
+
+```bash
 python stage3_build_router.py \
-    --train-samples $TRAIN_SAMPLES \
+    --train-samples outputs/train_rewritten.json \
     --top5-skills outputs/top5_skills.json \
     --output outputs/router_table.json
+```
 
-# Stage 4: Classify Benchmark Samples
+### 4. Classify Benchmark Questions
+
+```bash
 python stage4_classify_benchmark.py \
     --bench-dir $BENCH_DIR \
     --skills "siglip_mmr_diverse,clip_spatial_cooccur,clip_count_topk,siglip_ocr_text_aware,clip_mmr_diverse,uniform_128_direct" \
     --model-path $MODEL_PATH \
     --output outputs/cls_pred_v3.json
+```
 
-# Stage 5: Evaluate
+### 5. Route and Evaluate
+
+```bash
 python stage5_evaluate.py \
     --bench-dir $BENCH_DIR \
     --skills "siglip_mmr_diverse,clip_spatial_cooccur,clip_count_topk,siglip_ocr_text_aware,clip_mmr_diverse,uniform_128_direct" \
@@ -125,86 +335,76 @@ python stage5_evaluate.py \
     --cls-pred outputs/cls_pred_v3.json
 ```
 
-## File Structure
+</details>
 
-```
+---
+
+## 📁 Repository Structure
+
+```text
 autoskill_pipeline/
-├── README.md                      # This file
-├── SKILL.md                       # Stage 1 discovery-loop process specification
-├── run_pipeline.sh                # Full pipeline runner
-├── stage1_skill_discovery.py      # Rank skills, select Top-5
-├── stage2_rewrite_trainset.py    # Rewrite training queries (style alignment)
-├── stage3_build_router.py        # Learn category→skill mapping from 1500 samples
-├── stage4_classify_benchmark.py   # Qwen2.5-VL 19-class classification
-├── stage5_evaluate.py            # Route + evaluate on 5 benchmarks
-├── skills/                       # Skill implementations
-│   └── skills.py                 # Frame selection strategies
-├── lmms_eval_model/              # lmms-eval model adapter
-│   └── qwen2_5_vl_skill.py       # Qwen2.5-VL with pluggable skills
-├── scripts/                      # Benchmark run scripts
-│   ├── run_benchmark_skill.sh    # Run single skill × single benchmark
-│   └── run_all_skills.sh         # Run all skills × all benchmarks
-└── data/                         # Pre-computed data
-    ├── top5_skills.json          # Top-5 skill list
-    ├── router_table.json         # Final router table
-    └── aligned_samples.jsonl     # 1500 training samples
+├── README.md
+├── SKILL.md
+├── run_pipeline.sh
+│
+├── stage1_skill_discovery.py
+├── stage2_rewrite_trainset.py
+├── stage3_build_router.py
+├── stage4_classify_benchmark.py
+├── stage5_evaluate.py
+│
+├── skills/
+│   └── skills.py
+│
+├── lmms_eval_model/
+│   └── qwen2_5_vl_skill.py
+│
+├── scripts/
+│   ├── run_benchmark_skill.sh
+│   └── run_all_skills.sh
+│
+├── data/
+│   ├── top5_skills.json
+│   ├── router_table.json
+│   └── aligned_samples.jsonl
+│
+└── docs/
+    └── static/
+        └── images/
+            └── teaser.png
 ```
 
-## Results (Qwen2.5-VL-7B)
+---
 
-| Benchmark | Baseline | Single Best | AutoSkill | Δ |
-|-----------|---------|-------------|-----------|---|
-| MLVU | 66.0 | 68.3 | 69.0 | +3.0 |
-| MLVU-test | 47.7 | 51.5 | 51.1 | +3.4 |
-| LongVideoBench | 61.2 | 61.6 | 61.9 | +0.7 |
-| VideoMME | 64.6 | 65.3 | 65.2 | +0.6 |
-| LVBench | 42.1 | 46.2 | 46.8 | +4.7 |
-| **Average** | **56.3** | **58.6** | **58.8** | **+2.5** |
+## 📖 Citation
 
-## Classification Prompt (v3)
-
-```
-Classify this video question-answering query into exactly ONE category.
-Categories:
-- ocr_text: the question asks what text, words, subtitles, captions, signs, or labels are shown or written
-- object_identification: the question asks what a specific physical object, tool, food, or animal is
-- person_attribute: the question asks who a person is, or what they wear, carry, or hold
-- appearance: the question asks about color, shape, size, pattern, or visual look of something
-- action_recognition: the question asks what someone or something is doing
-- counting: the question asks how many or the number of something
-- temporal_ordering: the question asks about the order or sequence of events
-- spatial_location: the question asks where something is located
-- timestamp_specific: the question asks about a specific time or moment in the video
-- causal_reasoning: the question asks why something happens or the reason
-- narrative_plot: the question asks for a summary, main topic, or overall content of the video
-- anomaly_detection: the question asks about abnormal, unusual, or unexpected events
-- emotion_state: the question asks about emotion, mood, feeling, or expression
-- event_identification: the question asks to identify a named event, competition, award, film, or match
-- fact_verification: the question asks which statement or description is correct
-- general_qa: the question is a generic factual question not fitting other categories
-- negative_qa: the question asks what does NOT appear or is NOT included
-- yes_no: the question can be answered with yes or no
-- other: the question does not fit any of the above categories
-
-Question: {question}
-
-Reply with ONLY the category name (lowercase, exactly as listed), nothing else.
-```
-
-## Dependencies
-
-- Python 3.10+
-- PyTorch 2.0+
-- transformers
-- Qwen2.5-VL model weights
-- lmms-eval (for benchmark evaluation)
-- decord (video reading)
-
-## Citation
+If you find AutoSkill useful in your research, please consider citing our paper:
 
 ```bibtex
-@misc{autoskill,
-  title={AutoSkill: Automatic Video Skill Routing for Long-Video Understanding},
-  year={2026}
+@misc{hu2026oneskill,
+  title        = {One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering},
+  author       = {Hu, Jian and Cheng, Zixu and Li, Da and Li, Wei and Liu, Ziquan and Gong, Shaogang},
+  year         = {2026},
+  eprint       = {2609.12517},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.CV},
+  url          = {https://arxiv.org/abs/2609.12517}
 }
 ```
+
+---
+
+## 💖 Acknowledgements
+
+We thank the authors and maintainers of the open-source models, benchmarks, and evaluation frameworks that make this work possible, including:
+
+- [Qwen2.5-VL](https://github.com/QwenLM/Qwen2.5-VL)
+- [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)
+- CLIP
+- SigLIP
+- DINOv2
+- Grounding DINO
+- MLVU
+- LongVideoBench
+- VideoMME
+- LVBench
