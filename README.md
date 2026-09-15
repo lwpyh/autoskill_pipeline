@@ -1,4 +1,4 @@
-# 🔥 One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering
+# 🔥 (AutoSkill) One Skill Does Not Fit All: Automatic Discovery and Taxonomy-Guided Routing of Frame-Selection Skills for Long-Video Question Answering
 
 Code release for the paper:
 
